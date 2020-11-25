@@ -3,8 +3,7 @@ FROM nginx:1.17.8-alpine
 LABEL maintainer="urpylka@gmail.com"
 
 # webproc release settings
-ENV WEBPROC_VERSION 0.2.2
-ENV WEBPROC_URL https://github.com/jpillora/webproc/releases/download/$WEBPROC_VERSION/webproc_linux_amd64.gz
+ENV WEBPROC_URL https://github.com/jpillora/webproc/releases/download/v0.4.0/webproc_0.4.0_linux_amd64.gz
 
 # install webproc
 RUN apk update \
@@ -15,7 +14,8 @@ RUN apk update \
 
 # configure nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY index.html /usr/share/nginx/html/index.html
 
 EXPOSE 80 8080
 
-ENTRYPOINT ["webproc", "--config", "/etc/nginx/conf.d/default.conf", "--", "/usr/sbin/nginx", "-g", "daemon off;"]
+ENTRYPOINT ["webproc", "-c", "/etc/nginx/conf.d/default.conf", "-c", "/usr/share/nginx/html/index.html", "--", "/usr/sbin/nginx", "-g", "daemon off;"]
