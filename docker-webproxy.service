@@ -1,0 +1,57 @@
+#
+# Docker + Nginx + webproc systemd service
+#
+# Author: Artem Smirnov <urpylka@gmail.com>
+# Source: https://urpylka.com/posts/post-12/
+#
+# This service aims to make http reverse proxy service
+#
+# To use:
+# 1. Create a Docker volume container named `webproxy-data`.
+# 2. Initialize the data container.
+# 3. Download this service file to /etc/systemd/service/docker-webproxy.service
+# 4. Enable and start the service template with:
+#    `systemctl enable --now docker-webproxy.service`
+# 5. Verify service start-up with:
+#    `systemctl status docker-webproxy.service`
+#    `journalctl --unit docker-webproxy.service`
+#
+# For more information, see the systemd manual pages.
+#
+
+[Unit]
+Description=Nginx reverse proxy docker container
+Documentation=https://urpylka.com/posts/post-12/
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+RestartSec=10
+Restart=always
+
+Environment="NAME=webproxy"
+Environment="NGINX_CONF=/home/smirart/webproxy/nginx.conf"
+Environment="NGINX_HTML=/home/smirart/webproxy/index.html"
+Environment="IMG=urpylka/nginx:latest"
+Environment="PORT=80:80"
+Environment="NETWORK=bridge"
+
+# Clean-up bad state if still hanging around
+ExecStartPre=-/usr/bin/docker rm -f ${NAME}
+# Attempt to pull new image for security updates
+ExecStartPre=-/usr/bin/docker pull ${IMG}
+
+# Main process
+ExecStart=/usr/bin/docker run --rm --cap-add=NET_ADMIN \
+    --name ${NAME} \
+    --network=${NETWORK} \
+    -p ${PORT} \
+    -v ${NGINX_CONF}:/etc/nginx/conf.d/default.conf \
+    -v ${NGINX_HTML}:/usr/share/nginx/html/index.html \
+    -e HTTP_USER=foo \
+    -e HTTP_PASS=bar \
+    ${IMG}
+
+
+[Install]
+WantedBy=multi-user.target
